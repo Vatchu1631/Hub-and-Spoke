@@ -1,0 +1,98 @@
+//TEMPERATURE AND HUMIDITY SENSOR
+#include <DHT.h> //DHT11
+#define DHTPIN 4  // what digital pin the DHT22 is conected to
+#define DHTTYPE DHT11   // there are multiple kinds of DHT sensors(change for testing irrigation DHT22 to DHT11)
+DHT dht(DHTPIN, DHTTYPE);
+int timeSinceLastRead = 0; //DHT22;
+String tagvolt2;//dht11
+String stringOne2;//dht11
+double analogVolts = 0.0;
+String tagString;
+void setup() {
+  // put your setup code here, to run once:
+ pinMode(DHTPIN, INPUT);
+Serial.begin(9600);
+dht.begin();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+dht11();
+}
+void dht11()
+{
+  //DHT22
+   // Report every 2 seconds.
+  if(timeSinceLastRead > 2000) {
+    // Reading temperature or humidity takes about 250 milliseconds!
+    // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+    float h = dht.readHumidity();
+    // Read temperature as Celsius (the default)
+   stringOne2 =  h;
+  // Serial.println("stringOne: ");
+  // Serial.println(stringOne);
+    float t = dht.readTemperature();
+    // Read temperature as Fahrenheit (isFahrenheit = true)
+    tagvolt2 = t;
+    analogVolts = t;
+    float f = dht.readTemperature(true);
+    tagString = f;
+
+    // Check if any reads failed and exit early (to try again).
+    if (isnan(h) || isnan(t) || isnan(f)) {
+      Serial.println("Failed to read from DHT sensor!");
+      timeSinceLastRead = 0;
+      return;
+    }
+
+    // Compute heat index in Fahrenheit (the default)
+    float hif = dht.computeHeatIndex(f, h);
+    // Compute heat index in Celsius (isFahreheit = false)
+    float hic = dht.computeHeatIndex(t, h, false);
+
+    Serial.print("Humidity: ");
+    Serial.print(h);
+    Serial.print(" %\t");
+    Serial.print("Temperature: ");
+    Serial.print(t);
+    Serial.print(" *C ");
+    Serial.print(f);
+    Serial.print(" *F\t");
+    Serial.print("Heat index: ");
+    Serial.print(hic);
+    Serial.print(" *C ");
+    Serial.print(hif);
+    Serial.println(" *F");
+                    //LCD
+   // lcd.clear(); 
+   /* lcd.setCursor(0,0);
+    lcd.print("Hum:");
+    lcd.print(h);
+    lcd.print(" %");
+    lcd.setCursor(10,0);
+    lcd.print("Tem:"); 
+    lcd.print(t);
+    lcd.println(" Cel  ");
+    delay(1000);*/
+    //LCD
+
+    timeSinceLastRead = 0;
+ /* StaticJsonBuffer<300> JSONbuffer;
+  JsonObject& JSONencoder = JSONbuffer.createObject();
+  
+  JSONencoder["temperature"] = tagvolt2.c_str();
+  JSONencoder["humidity"] = stringOne2.c_str();
+  char JSONmessageBuffer[300];
+  JSONencoder.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
+  //Udp.write(JSONmessageBuffer);
+  JSONencoder.printTo(Udp);
+  JSONencoder.printTo(Serial);
+  //Udp.println();
+  //delay(10000);
+  client.publish(addDEVICE2.c_str(), JSONmessageBuffer);
+ // REPLY.publish(JSONmessageBuffer);*/
+  }
+  delay(100);
+  timeSinceLastRead += 10;
+  //DHT22
+  }

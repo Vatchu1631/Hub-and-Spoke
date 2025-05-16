@@ -1,0 +1,223 @@
+//
+//  HTML PAGE
+//
+const char PAGE_BNetworkConfiguration[] PROGMEM = R"=====(
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<head>
+<style>
+.button {
+  border: none;
+  color: white;
+  padding: 12px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.button1 {
+  background-color: blue; 
+  color: white; 
+  border: 2px solid blue;
+}
+
+.button1:hover {
+  background-color: white;
+  color: black
+}
+
+
+
+</style>
+</head>
+<body style="background-color:powderblue;">
+</body>
+<a href="\"  class="btn btn--s"><</a>&nbsp;&nbsp;<strong>WIFI Settings</strong>
+<hr>
+<P style="color:Tomato;">(Note:Don't use "space" at the end & Case sensitive)</P>
+Connect to Router with these settings:<br>
+<form action="" method="post">
+<table border="0"  cellspacing="0" cellpadding="3" style="width:310px" >
+<tr><td align="right"><tr bgcolor=#ff6347 ><td><strong>Device</strong></td><td><strong>Startup</strong></td><tr>
+<tr><td align="right">Delay Time:</td><td><input type="text" id="temp" name="temp" value=""></td><td>(minutes)</td></tr>
+<tr><td align="right">Host:</td><td><input type="checkbox" id="hst" name="hst"></td></tr>
+<tr><td align="right">Host Name:</td><td><input type="text" id="hostname_1" name="hostname_1" value=""></td><td>(<10)</td></tr>
+<tr><td align="right"><tr bgcolor=#ff6347 ><td><strong>Router</strong></td><td><strong>Settings</strong></td><tr>
+<tr><td align="right">AP1_SSID:</td><td><input type="text" id="ssid" name="ssid" value=""></td><td>(<30)</td></tr>
+<tr><td align="right">AP1_Password:</td><td><input type="text" id="password" name="password" value=""></td><td>(<20)</td></tr>
+
+<tr><td colspan="2" align="center"><input type="submit" style="width:150px" class="btn btn--m btn--blue" value="Save">&nbsp;<a href="config.html"button class="button button1" align="right">Advance</a></td></tr>
+</table>
+</form>
+<hr>
+<strong>Connection State:</strong><div id="connectionstate">N/A</div>
+<hr>
+<strong>Networks:</strong><br>
+<table border="0"  cellspacing="3" style="width:310px" >
+<tr><td><div id="networks">Scanning...</div></td></tr>
+<tr><td align="center"><a href="javascript:GetState()" style="width:150px" class="btn btn--m btn--blue">Refresh</a></td></tr>
+</table>
+
+
+<script>
+
+function GetState()
+{
+  setValues("/admin/connectionstate");
+}
+function selssid(value)
+{
+  document.getElementById("ssid").value = value; 
+}
+
+
+window.onload = function ()
+{
+  load("style.css","css", function() 
+  {
+    load("microajax.js","js", function() 
+    {
+          setValues("/admin/values");
+          setTimeout(GetState,3000);
+    });
+  });
+}
+function load(e,t,n){if("js"==t){var a=document.createElement("script");a.src=e,a.type="text/javascript",a.async=!1,a.onload=function(){n()},document.getElementsByTagName("head")[0].appendChild(a)}else if("css"==t){var a=document.createElement("link");a.href=e,a.rel="stylesheet",a.type="text/css",a.async=!1,a.onload=function(){n()},document.getElementsByTagName("head")[0].appendChild(a)}}
+
+
+
+
+</script>
+
+
+)=====";
+
+const char PAGE_BWaitAndReload[] PROGMEM = R"=====(
+<meta http-equiv="refresh" content="5; URL=config.html">
+Please Wait....Configuring and Restarting.
+)=====";
+
+
+//
+//  SEND HTML PAGE OR IF A FORM SUMBITTED VALUES, PROCESS THESE VALUES
+// 
+
+void Bsend_network_configuration_html()
+{
+  
+  if (server.args() > 0 )  // Save Settings
+  {
+    String temp = "";
+    config.hst = false;
+        for ( uint8_t i = 0; i < server.args(); i++ ) { 
+      if (server.argName(i) == "temp") config.Temp  =  server.arg(i).toInt();
+      if (server.argName(i) == "hst") config.hst  = true;
+      if (server.argName(i) == "hostname_1") config.hostname_1 = urldecode(server.arg(i));
+      if (server.argName(i) == "ssid") config.ssid =   urldecode(server.arg(i));
+      if (server.argName(i) == "password") config.password =    urldecode(server.arg(i));         
+    }
+    Serial.println("loop");
+    server.send ( 200, "text/html", PAGE_BWaitAndReload );
+    WriteConfig();
+    ConfigureWifi();
+    AdminTimeOutCounter=0;
+     ESP.restart();
+  }
+  else
+  {
+    Serial.println("elseloop");
+    server.send ( 200, "text/html", PAGE_BNetworkConfiguration ); 
+  }
+  Serial.println(__FUNCTION__); 
+}
+
+
+
+
+
+//
+//   FILL THE PAGE WITH VALUES
+//
+
+void Bsend_network_configuration_values_html()
+{
+
+  String values ="";
+  values += "temp|" +  (String) config.Temp + "|input\n";
+  values += "hst|" +  (String) (config.hst ? "checked" : "") + "|chk\n";
+  values += "hostname_1|" + (String) config.hostname_1 + "|input\n";
+  values += "ssid|" + (String) config.ssid + "|input\n";
+  values += "password|" +  (String) config.password + "|input\n";
+  
+  server.send ( 200, "text/plain", values);
+  Serial.println("valueloop");
+  Serial.println(__FUNCTION__); 
+  
+}
+
+
+//
+//   FILL THE PAGE WITH NETWORKSTATE & NETWORKS
+//
+
+void Bsend_connection_state_values_html()
+{
+
+  String state = "N/A";
+  String Networks = "";
+  if (WiFi.status() == 0) state = "Idle";
+  else if (WiFi.status() == 1) state = "NO SSID AVAILBLE";
+  else if (WiFi.status() == 2) state = "SCAN COMPLETED";
+  else if (WiFi.status() == 3) state = "CONNECTED";
+  else if (WiFi.status() == 4) state = "CONNECT FAILED";
+  else if (WiFi.status() == 5) state = "CONNECTION LOST";
+  else if (WiFi.status() == 6) state = "DISCONNECTED";
+
+
+
+   int n = WiFi.scanNetworks();
+ 
+   if (n == 0)
+   {
+     Networks = "<font color='#FF0000'>No networks found!</font>";
+   }
+  else
+    {
+   
+    
+    Networks = "Found " +String(n) + " Networks<br>";
+    Networks += "<table border='0' cellspacing='0' cellpadding='3'>";
+    Networks += "<tr bgcolor='#ff6347' ><td><strong>Name</strong></td><td><strong>Quality</strong></td><td><strong>Enc</strong></td><tr>";
+    for (int i = 0; i < n; ++i)
+    {
+      int quality=0;
+      if(WiFi.RSSI(i) <= -100)
+      {
+          quality = 0;
+      }
+      else if(WiFi.RSSI(i) >= -50)
+      {
+          quality = 100;
+      }
+      else
+      {
+        quality = 2 * (WiFi.RSSI(i) + 100);
+      }
+
+
+      Networks += "<tr><td><a href='javascript:selssid(\""  +  String(WiFi.SSID(i))  + "\")'>"  +  String(WiFi.SSID(i))  + "</a></td><td>" +  String(quality) + "%</td><td>" +  String((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*")  + "</td></tr>";
+    }
+    Networks += "</table>";
+  }
+   
+  String values ="";
+  values += "connectionstate|" +  state + "|div\n";
+  values += "networks|" +  Networks + "|div\n";
+  server.send ( 200, "text/plain", values);
+  Serial.println(__FUNCTION__); 
+  
+}

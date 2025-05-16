@@ -1,0 +1,23 @@
+LPG GAS SENSOR  READ ANALOG  VALUE
+
+// lpg is connected to GPIO 33 (Analog ADC1_CH5) 
+const int potPin = 33;
+
+// variable for storing the potentiometer value
+int potValue = 0;
+double analogVolts = 0.0;
+
+void setup() {
+  Serial.begin(9600);
+  delay(1000);
+}
+
+void loop() {
+  // Reading potentiometer value
+  potValue = analogRead(potPin);
+  analogVolts = ((potValue * 3.02) / 4096)*100;
+  Serial.println(potValue);
+  Serial.print("analogVolts:");
+  Serial.println(analogVolts);
+  delay(500);
+}
